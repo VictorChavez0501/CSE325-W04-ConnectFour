@@ -1,0 +1,127 @@
+@inject GameState State
+
+<div class="game-layout" style="--board-color: @BoardColor; --player-one: @Player1Color; --player-two: @Player2Color;">
+    <section class="game-card" aria-label="Connect Four game">
+        <div class="game-toolbar">
+            <div class="turn-block" role="status" aria-live="polite">
+                @if (State.Winner != 0)
+                {
+                    <span class="status-label">GAME OVER</span>
+                    <strong>Player @State.Winner wins!</strong>
+                }
+                else if (State.IsDraw)
+                {
+                    <span class="status-label">GAME OVER</span>
+                    <strong>It's a draw!</strong>
+                }
+                else
+                {
+                    <span class="status-label">CURRENT TURN</span>
+                    <strong><span class="turn-dot player-@State.PlayerTurn"></span>Player @State.PlayerTurn</strong>
+                }
+            </div>
+            <button class="new-game" type="button" @onclick="ResetGame">New game <span aria-hidden="true">↗</span></button>
+        </div>
+
+        <p class="hint">Choose a column to drop your piece</p>
+        <div class="board-shell">
+            <div class="column-buttons" aria-label="Choose a column">
+                @for (var column = 0; column < GameState.Columns; column++)
+                {
+                    var selectedColumn = column;
+                    <button type="button"
+                            aria-label="Drop piece in column @(column + 1)"
+                            title="Column @(column + 1)"
+                            disabled="@(State.IsOver || State.IsColumnFull(column))"
+                            @onclick="() => PlayPiece(selectedColumn)">
+                        <span aria-hidden="true">↓</span>
+                    </button>
+                }
+            </div>
+            <div class="board" role="img" aria-label="Board with 6 rows and 7 columns. @BoardDescription">
+                @for (var row = 0; row < GameState.Rows; row++)
+                {
+                    @for (var column = 0; column < GameState.Columns; column++)
+                    {
+                        var owner = State.PieceAt(row, column);
+                        <div class="cell">
+                            <div class="slot @(owner == 0 ? "empty" : $"player-{owner}")"></div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="error" role="alert">@errorMessage</p>
+        }
+
+        <div class="legend">
+            <span><i class="legend-dot player-1"></i> Player 1</span>
+            <span><i class="legend-dot player-2"></i> Player 2</span>
+        </div>
+    </section>
+
+    <aside class="history-card" aria-label="Move history">
+        <div class="history-top">
+            <div>
+                <span class="eyebrow">EXTRA FEATURE</span>
+                <h2>Move history</h2>
+            </div>
+            <span class="move-count">@State.Moves.Count / 42</span>
+        </div>
+        <p class="history-description">Every move is recorded as you play.</p>
+        @if (State.Moves.Count == 0)
+        {
+            <div class="empty-history">
+                <div class="empty-icon" aria-hidden="true">↘</div>
+                <strong>No moves yet</strong>
+                <span>Make the first drop to start the timeline.</span>
+            </div>
+        }
+        else
+        {
+            <ol class="move-list" aria-live="polite">
+                @foreach (var move in State.Moves.Reverse())
+                {
+                    <li>
+                        <span class="move-number">@move.Number.ToString("D2")</span>
+                        <span class="move-player"><i class="legend-dot player-@move.Player"></i>Player @move.Player</span>
+                        <span class="move-position">Column @move.Column <span aria-hidden="true">·</span> Row @move.Row</span>
+                    </li>
+                }
+            </ol>
+        }
+        <div class="history-note">New game clears the board and this list.</div>
+    </aside>
+</div>
+
+@code {
+    [Parameter] public string BoardColor { get; set; } = "#2449b9";
+    [Parameter] public string Player1Color { get; set; } = "#f57d54";
+    [Parameter] public string Player2Color { get; set; } = "#f4c54f";
+
+    private string errorMessage = string.Empty;
+    private string BoardDescription => $"{State.Moves.Count} pieces played. " +
+        (State.Winner != 0 ? $"Player {State.Winner} won." : State.IsDraw ? "Draw." : $"Player {State.PlayerTurn}'s turn.");
+
+    private void PlayPiece(int column)
+    {
+        errorMessage = string.Empty;
+        try
+        {
+            State.PlayPiece(column);
+        }
+        catch (InvalidOperationException exception)
+        {
+            errorMessage = exception.Message;
+        }
+    }
+
+    private void ResetGame()
+    {
+        State.Reset();
+        errorMessage = string.Empty;
+    }
+}

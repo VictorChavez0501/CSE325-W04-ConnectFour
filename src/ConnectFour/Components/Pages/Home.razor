@@ -1,0 +1,19 @@
+﻿@page "/"
+
+<PageTitle>Connect Four | CSE 325</PageTitle>
+
+<section class="intro">
+    <div>
+        <span class="eyebrow">CSE 325 · BLAZOR PROJECT</span>
+        <h1>Connect <em>Four.</em></h1>
+        <p>Drop your pieces. Build a line of four. Claim the win.</p>
+    </div>
+    <div class="intro-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+    </div>
+</section>
+
+<Board @rendermode="InteractiveServer"
+       BoardColor="#2449b9"
+       Player1Color="#f57d54"
+       Player2Color="#f4c54f" />
